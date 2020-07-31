@@ -25,40 +25,14 @@ public class Controller implements Initializable, Runnable {
     private DataInputStream is;
     private DataOutputStream os;
     public TextField textField;         // changed name "text"
-    private  byte [] buffer = new byte[1024];
 
     String clientPath;
 
     public void sendCommand(ActionEvent actionEvent) {
-
-/*        while (true) {
-            try {
-                String command = is.readUTF();
-                if (command.equals("./upload")) {               // command identification
-                    String fileName = is.readUTF();             // read fileName
-                    System.out.println("fileName: " + fileName);
-                    long fileLength = is.readLong();            // read fileLength
-                    System.out.println("    fileLength: " + fileLength);
-                    File file = new File(clientPath + "/" + fileName); // create path
-                    if (!file.exists()) {
-                        file.createNewFile();                                           // create pacifier
-                    }
-                    try(FileOutputStream fos = new FileOutputStream(file)) {
-                        for (long i = 0; i < (fileLength / 1024 == 0 ? 1 : fileLength / 1024); i++) {
-                            int bytesRead = is.read(buffer);
-                            fos.write(buffer, 0, bytesRead);            // writing
-                        }
-                    }
-                    os.writeUTF("OK");                                  // response
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-*/        try {
+        try {
             os.writeUTF("./download");
             os.writeUTF(textField.getText());
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -66,7 +40,7 @@ public class Controller implements Initializable, Runnable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         // TODO: 7/21/2020 init connect to server
-        try{
+        try {
             socket = new Socket("localhost", 8189);
             is = new DataInputStream(socket.getInputStream());
             os = new DataOutputStream(socket.getOutputStream());
@@ -81,49 +55,30 @@ public class Controller implements Initializable, Runnable {
                 clientFileList.add(file);
                 listView.getItems().add(file.getName() /*+ " : " + file.length()*/);
             }
-            listView.setOnMouseClicked(a -> {
+            listView.setOnMouseClicked(a -> {           //------------ отправка копии файла на сервер ------------
                 if (a.getClickCount() == 2) {
-                    String fileName = listView.getSelectionModel().getSelectedItem(); // file name
+                    String fileName = listView.getSelectionModel().getSelectedItem();
                     File currentFile = findFileByName(fileName);                        // find file by name
                     if (currentFile != null) {                                          // write file
                         try {
+                            byte[] buffer = new byte[1024];
                             os.writeUTF("./upload");
                             os.writeUTF(fileName);
                             os.writeLong(currentFile.length());
                             FileInputStream fis = new FileInputStream(currentFile);
- //                           byte [] buffer = new byte[1024];
                             while (fis.available() > 0) {
                                 int bytesRead = fis.read(buffer);
                                 os.write(buffer, 0, bytesRead);
                             }
-                            os.flush();                                                 // flush buffer
-                            String response = is.readUTF();                             // wait response
+                            os.flush();
+                            String response = is.readUTF();
                             System.out.println(response);
-                        } catch (Exception e) {
+                        } catch (Exception e) {         //------------------------------------------------
                             e.printStackTrace();
                         }
                     }
                 }
             });
-
-          /*  String command = is.readUTF();
-            if (command.equals("./upload")) {               // command identification
-                String fileName = is.readUTF();             // read fileName
-                System.out.print("fileName: " + fileName);
-                long fileLength = is.readLong();            // read fileLength
-                System.out.println("    fileLength: " + fileLength);
-                File file = new File(clientPath + "/" + fileName); // create path
-                if (!file.exists()) {
-                    file.createNewFile();                                           // create pacifier
-                }
-                try(FileOutputStream fos = new FileOutputStream(file)) {
-                    for (long i = 0; i < (fileLength / 1024 == 0 ? 1 : fileLength / 1024); i++) {
-                        int bytesRead = is.read(buffer);
-                        fos.write(buffer, 0, bytesRead);            // writing -> file
-                    }
-                }
-                os.writeUTF("OK");                                  // response
-            }*/
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -131,7 +86,7 @@ public class Controller implements Initializable, Runnable {
 
     private File findFileByName(String fileName) {
         for (File file : clientFileList) {
-            if (file.getName().equals(fileName)){
+            if (file.getName().equals(fileName)) {
                 return file;
             }
         }
@@ -139,26 +94,28 @@ public class Controller implements Initializable, Runnable {
     }
 
     @Override
-    public void run() {
-        try{
+    public void run() {              //------------ запись файла с сервера ------------
+        try {
+            System.out.println("loading");                  // <----------- ЭТОТ ОТЧЕТ НЕ ПЕЧАТАЕТСЯ. СЮДА ПРОГРАММА НЕ ДОХОДИТ
             String command = is.readUTF();
-            if (command.equals("./upload")) {               // command identification
-                String fileName = is.readUTF();             // read fileName
+            if (command.equals("./upload")) {
+                String fileName = is.readUTF();
                 System.out.print("fileName: " + fileName);
-                long fileLength = is.readLong();            // read fileLength
+                long fileLength = is.readLong();
                 System.out.println("    fileLength: " + fileLength);
-                File file = new File(clientPath + "/" + fileName); // create path
+                File file = new File(clientPath + "/" + fileName);
                 if (!file.exists()) {
-                    file.createNewFile();                                           // create pacifier
+                    file.createNewFile();
                 }
-                try(FileOutputStream fos = new FileOutputStream(file)) {
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    byte[] buffer = new byte[1024];
                     for (long i = 0; i < (fileLength / 1024 == 0 ? 1 : fileLength / 1024); i++) {
                         int bytesRead = is.read(buffer);
                         fos.write(buffer, 0, bytesRead);            // writing -> file
                     }
                 }
-                os.writeUTF("OK");                                  // response
-            }
+                os.writeUTF("OK");
+            }                               //------------------------------------------------
         } catch (Exception e) {
             e.printStackTrace();
         }

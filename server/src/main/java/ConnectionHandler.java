@@ -21,11 +21,9 @@ public class ConnectionHandler implements Runnable {
         Thread.sleep(2000);
     }
 
-
-
     @Override
     public void run() {
-        byte [] buffer = new byte[1024];
+        byte[] buffer = new byte[1024];
         serverFileList = new ArrayList<>();
         serverPath = "./server/src/main/resources/";
         File dir = new File(serverPath);
@@ -39,12 +37,11 @@ public class ConnectionHandler implements Runnable {
         while (true) {
             try {
                 String command = is.readUTF();
-                if (command.equals("./download")){
+                if (command.equals("./download")) {                  //------------ отправка копии файла клиенту ------------
                     System.out.println("./download");
-                    String fileName = is.readUTF();             // read fileName
-//                    System.out.println("fileName: " + fileName);
-                    File currentFile = findFileByName(fileName);                        // find file by name
-                    if (currentFile != null) {                                          // write file
+                    String fileName = is.readUTF();
+                    File currentFile = findFileByName(fileName);
+                    if (currentFile != null) {
                         try {
                             os.writeUTF("./upload");
                             os.writeUTF(fileName);
@@ -53,34 +50,34 @@ public class ConnectionHandler implements Runnable {
                             while (fis.available() > 0) {
                                 int bytesRead = fis.read(buffer);
                                 os.write(buffer, 0, bytesRead);
+                                System.out.println("file sewed");       // этот отчет печатается
                             }
-                            os.flush();                                                 // flush buffer
-                            String response = is.readUTF();                             // wait response
-                            System.out.println(response);
-                        } catch (Exception e) {
+                            os.flush();                                // отправка
+                            String response = is.readUTF();
+                            System.out.println(response + " ***");     // этот отчет печатается
+                        } catch (Exception e) {                     //------------------------------------------------
                             e.printStackTrace();
                         }
                     }
-                }
-               else if (command.equals("./upload")) {               // command identification
-                    String fileName = is.readUTF();             // read fileName
+                } else if (command.equals("./upload")) {               //------------ запись файла на сервер ------------
+                    String fileName = is.readUTF();
                     System.out.print("fileName: " + fileName);
-                    long fileLength = is.readLong();            // read fileLength
+                    long fileLength = is.readLong();
                     System.out.println("    fileLength: " + fileLength);
-                    File file = new File(Server.serverPath + "/" + fileName); // create path
+                    File file = new File(Server.serverPath + "/" + fileName);
                     if (!file.exists()) {
-                        file.createNewFile();                                           // create pacifier
+                        file.createNewFile();
                     }
-                    try(FileOutputStream fos = new FileOutputStream(file)) {
+                    try (FileOutputStream fos = new FileOutputStream(file)) {
                         for (long i = 0; i < (fileLength / 1024 == 0 ? 1 : fileLength / 1024); i++) {
                             int bytesRead = is.read(buffer);
                             fos.write(buffer, 0, bytesRead);            // writing -> file
                         }
                     }
-                    os.writeUTF("OK");                                  // response
+                    os.writeUTF("OK");                                  //------------------------------------------------
                 }
 /*
-               if(command.equals("close")) {       // ПОКА  НЕ ПРИДУМАЛ КАК ОБРАБОТАТЬ ЗАКРЫВАНИЕ ОКНА ЮЗЕРА ЕСЛИ ИДЕТ ЗАПИСЬ ДАННЫХ
+               if(command.equals("close")) {       //   НЕ ПРИДУМАЛ КАК ОБРАБОТАТЬ ЗАКРЫВАНИЕ ОКНА ЮЗЕРА ЕСЛИ ИДЕТ ЗАПИСЬ ДАННЫХ
                     is.close();
                     os.close();
                     throw new InterruptedException("Client lives");
@@ -91,9 +88,10 @@ public class ConnectionHandler implements Runnable {
             }
         }
     }
+
     private File findFileByName(String fileName) {
         for (File file : serverFileList) {
-            if (file.getName().equals(fileName)){
+            if (file.getName().equals(fileName)) {
                 return file;
             }
         }
